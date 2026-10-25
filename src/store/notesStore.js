@@ -106,16 +106,82 @@ export const useNotes = create(
         }
       },
 
-      trash: (id) => {
+      // ---- actions on several notes (also used for one) ----
+      // Each returns the notes as they were, so the caller can offer "Undo" via restoreSnapshots.
+      trashMany: (ids) => {
+        const before = get().notes.filter((n) => ids.includes(n.id));
+        before.forEach((n) => cancelReminder(n.notificationId));
+        const now = Date.now();
+        set({
+          notes: get().notes.map((n) =>
+            ids.includes(n.id)
+              ? {
+                  ...n,
+                  trashedAt: now,
+                  pinned: false,
+                  reminder: null,
+                  notificationId: null,
+                  updatedAt: now,
+                }
+              : n
+          ),
+        });
+        return before;
+      },
+      trash: (id) => get().trashMany([id]),
+
+      // all already archived -> unarchive them, otherwise archive them all
+      archiveMany: (ids) => {
+        const before = get().notes.filter((n) => ids.includes(n.id));
+        const archive = !before.every((n) => n.archived);
+        const now = Date.now();
+        set({
+          notes: get().notes.map((n) =>
+            ids.includes(n.id)
+              ? { ...n, archived: archive, pinned: false, updatedAt: now }
+              : n
+          ),
+        });
+        return before;
+      },
+
+      // all already pinned -> unpin them, otherwise pin them all
+      pinMany: (ids) => {
+        const before = get().notes.filter((n) => ids.includes(n.id));
+        const pin = !before.every((n) => n.pinned);
+        const now = Date.now();
+        set({
+          notes: get().notes.map((n) =>
+            ids.includes(n.id)
+              ? { ...n, pinned: pin, archived: pin ? false : n.archived, updatedAt: now }
+              : n
+          ),
+        });
+        return before;
+      },
+
+      // Put notes back exactly as they were (undo), and re-schedule their reminders.
+      restoreSnapshots: (snapshots) => {
+        set({
+          notes: get().notes.map((n) => snapshots.find((s) => s.id === n.id) || n),
+        });
+        snapshots.forEach((s) => s.reminder && get().setReminder(s.id, s.reminder));
+      },
+
+      // Make a copy of a note (without its reminder); returns the new note's id.
+      duplicate: (id) => {
         const n = get().notes.find((x) => x.id === id);
-        if (n) cancelReminder(n.notificationId);
-        get().update(id, {
-          trashedAt: Date.now(),
-          pinned: false,
-          reminder: null,
-          notificationId: null,
+        if (!n) return null;
+        return get().add({
+          type: n.type,
+          title: n.title,
+          body: n.body,
+          items: (n.items || []).map((i) => ({ ...i, id: newId() })),
+          labels: n.labels || [],
+          color: n.color,
         });
       },
+
       restore: (id) => get().update(id, { trashedAt: null }),
       remove: (id) => {
         const n = get().notes.find((x) => x.id === id);

@@ -1,7 +1,9 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import Icon from "@/components/Icon";
 import NoteCard from "@/components/NoteCard";
 import { useColumns } from "@/hooks/useColumns";
 import { useTheme } from "@/hooks/useTheme";
+import { useSettings } from "@/store/settingsStore";
 
 // Round-robin masonry: note 0 -> col 0, note 1 -> col 1, ...
 function Masonry({ notes, inTrash }) {
@@ -28,8 +30,10 @@ export default function NotesGrid({
   inTrash = false,
   groupPinned = false,
   emptyText,
+  emptyIcon,
 }) {
   const c = useTheme();
+  const listLayout = useSettings((s) => s.layout === "list");
   const pinned = groupPinned ? notes.filter((n) => n.pinned) : [];
   const others = groupPinned ? notes.filter((n) => !n.pinned) : notes;
 
@@ -38,10 +42,13 @@ export default function NotesGrid({
       contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.inner}>
+      <View style={[styles.inner, listLayout && styles.innerList]}>
         {header}
         {notes.length === 0 && (
-          <Text style={[styles.empty, { color: c.muted }]}>{emptyText}</Text>
+          <View style={styles.empty}>
+            {!!emptyIcon && <Icon name={emptyIcon} size={96} color={c.border} />}
+            <Text style={[styles.emptyText, { color: c.muted }]}>{emptyText}</Text>
+          </View>
         )}
         {pinned.length > 0 && (
           <>
@@ -61,6 +68,7 @@ export default function NotesGrid({
 const styles = StyleSheet.create({
   scroll: { padding: 16, alignItems: "center", flexGrow: 1 },
   inner: { width: "100%", maxWidth: 1200 },
+  innerList: { maxWidth: 600 },
   masonry: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   column: { flex: 1, gap: 12 },
   label: {
@@ -70,5 +78,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
   },
-  empty: { textAlign: "center", marginTop: 48, fontSize: 16 },
+  empty: { alignItems: "center", gap: 16, marginTop: 48 },
+  emptyText: { textAlign: "center", fontSize: 16 },
 });

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Icon from "@/components/Icon";
 import Sheet from "@/components/Sheet";
+import Tip from "@/components/Tip";
 import { useTheme } from "@/hooks/useTheme";
 import { confirmDelete } from "@/lib/confirm";
 import { useNotes } from "@/store/notesStore";
@@ -27,7 +29,7 @@ export default function EditLabelsModal() {
   return (
     <Sheet visible={open} onClose={() => setOpen(false)} title="Edit labels">
       <View style={[styles.row, { borderBottomColor: c.border }]}>
-        <Text style={{ color: c.muted }}>＋</Text>
+        <Icon name="add" size={20} color={c.muted} />
         <TextInput
           autoFocus
           value={draft}
@@ -50,25 +52,27 @@ export default function EditLabelsModal() {
         )}
         {labels.map((l) => (
           <View key={l.id} style={styles.row}>
-            <Text>🏷️</Text>
+            <Icon name="label-outline" size={20} color={c.muted} />
             {/* defaultValue + onEndEditing: the name is saved when you leave the field */}
             <TextInput
               defaultValue={l.name}
               onEndEditing={(e) => renameLabel(l.id, e.nativeEvent.text)}
               style={[styles.input, noOutline, { color: c.text }]}
             />
-            <Pressable
-              hitSlop={8}
-              onPress={() =>
-                confirmDelete(
-                  `Delete "${l.name}"?`,
-                  "The label is removed from your notes. The notes themselves are kept.",
-                  () => deleteLabel(l.id)
-                )
-              }
-            >
-              <Text style={{ color: c.muted }}>✕</Text>
-            </Pressable>
+            <Tip label="Delete label">
+              <Pressable
+                hitSlop={8}
+                onPress={() =>
+                  confirmDelete(
+                    `Delete "${l.name}"?`,
+                    "The label is removed from your notes. The notes themselves are kept.",
+                    () => deleteLabel(l.id)
+                  )
+                }
+              >
+                <Icon name="delete-outline" size={20} color={c.muted} />
+              </Pressable>
+            </Tip>
           </View>
         ))}
       </ScrollView>

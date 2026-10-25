@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import Checklist from "@/components/Checklist";
 import ColorPicker from "@/components/ColorPicker";
+import Icon from "@/components/Icon";
+import Tip from "@/components/Tip";
 import { useTheme } from "@/hooks/useTheme";
 import { newItem, useNotes } from "@/store/notesStore";
 import { noteBg } from "@/theme";
@@ -56,9 +58,11 @@ export default function Composer({ defaultLabels = [] }) {
     return (
       <Pressable style={[styles.box, styles.collapsed, shell]} onPress={() => start("text")}>
         <Text style={[styles.placeholder, { color: c.muted }]}>Take a note...</Text>
-        <Pressable onPress={() => start("list")} hitSlop={8}>
-          <Text style={[styles.listBtn, { color: c.muted }]}>☑</Text>
-        </Pressable>
+        <Tip label="New list">
+          <Pressable onPress={() => start("list")} hitSlop={8}>
+            <Icon name="check-box" size={22} color={c.muted} />
+          </Pressable>
+        </Tip>
       </Pressable>
     );
   }
@@ -121,7 +125,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   placeholder: { fontSize: 15 },
-  listBtn: { fontSize: 20 },
   title: { fontSize: 16, fontWeight: "600", padding: 0 },
   body: { fontSize: 14, minHeight: 60, padding: 0, textAlignVertical: "top" },
   footer: { flexDirection: "row", justifyContent: "flex-end" },

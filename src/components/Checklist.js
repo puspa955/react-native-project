@@ -1,5 +1,7 @@
 import { useRef } from "react";
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import Icon from "@/components/Icon";
+import Tip from "@/components/Tip";
 import { useTheme } from "@/hooks/useTheme";
 import { newItem } from "@/store/notesStore";
 
@@ -26,7 +28,11 @@ export default function Checklist({ items, onChange, focusFirst = false }) {
   const row = (item) => (
     <View key={item.id} style={styles.row}>
       <Pressable onPress={() => patch(item.id, { done: !item.done })} hitSlop={6}>
-        <Text style={[styles.box, { color: c.text }]}>{item.done ? "☑" : "☐"}</Text>
+        <Icon
+          name={item.done ? "check-box" : "check-box-outline-blank"}
+          size={22}
+          color={item.done ? c.muted : c.text}
+        />
       </Pressable>
       <TextInput
         value={item.text}
@@ -43,9 +49,11 @@ export default function Checklist({ items, onChange, focusFirst = false }) {
           item.done && styles.struck,
         ]}
       />
-      <Pressable onPress={() => remove(item.id)} hitSlop={6}>
-        <Text style={[styles.x, { color: c.muted }]}>✕</Text>
-      </Pressable>
+      <Tip label="Delete item">
+        <Pressable onPress={() => remove(item.id)} hitSlop={6}>
+          <Icon name="close" size={18} color={c.muted} />
+        </Pressable>
+      </Tip>
     </View>
   );
 
@@ -56,7 +64,8 @@ export default function Checklist({ items, onChange, focusFirst = false }) {
     <View style={styles.wrap}>
       {open.map(row)}
       <Pressable onPress={() => addAfter(null)} style={styles.add}>
-        <Text style={[styles.addText, { color: c.muted }]}>+ List item</Text>
+        <Icon name="add" size={22} color={c.muted} />
+        <Text style={[styles.addText, { color: c.muted }]}>List item</Text>
       </Pressable>
       {done.length > 0 && (
         <>
@@ -73,11 +82,9 @@ export default function Checklist({ items, onChange, focusFirst = false }) {
 const styles = StyleSheet.create({
   wrap: { gap: 2 },
   row: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 32 },
-  box: { fontSize: 20 },
   input: { flex: 1, fontSize: 15, padding: 0, paddingVertical: 4 },
   struck: { textDecorationLine: "line-through" },
-  x: { fontSize: 14, paddingHorizontal: 4 },
-  add: { paddingVertical: 6, paddingLeft: 30 },
+  add: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6 },
   addText: { fontSize: 14 },
   label: { fontSize: 11, fontWeight: "600", letterSpacing: 1, marginTop: 10 },
 });

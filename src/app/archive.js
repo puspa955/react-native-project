@@ -8,6 +8,7 @@ export default function ArchiveScreen() {
   return (
     <NotesGrid
       notes={notes}
+      emptyIcon={searching ? "search" : "archive"}
       emptyText={searching ? "No matching notes" : "Your archived notes appear here"}
     />
   );

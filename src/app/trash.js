@@ -24,7 +24,15 @@ export default function TrashScreen() {
     </View>
   );
 
-  return <NotesGrid notes={notes} inTrash header={header} emptyText="No notes in Trash" />;
+  return (
+    <NotesGrid
+      notes={notes}
+      inTrash
+      header={header}
+      emptyIcon="delete-outline"
+      emptyText="No notes in Trash"
+    />
+  );
 }
 
 const styles = StyleSheet.create({

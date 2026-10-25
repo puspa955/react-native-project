@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Icon from "@/components/Icon";
 import { useOverdue } from "@/hooks/useOverdue";
 import { useTheme } from "@/hooks/useTheme";
 import { formatReminder } from "@/lib/format";
@@ -25,8 +26,13 @@ export default function NoteChips({ note, onPressReminder, onPressLabels }) {
         <Pressable
           onPress={onPressReminder}
           disabled={!onPressReminder}
-          style={[styles.chip, chip]}
+          style={[styles.chip, styles.reminder, chip]}
         >
+          <Icon
+            name="notifications-none"
+            size={13}
+            color={overdue ? c.danger : c.text}
+          />
           <Text
             style={[
               styles.text,
@@ -34,7 +40,7 @@ export default function NoteChips({ note, onPressReminder, onPressLabels }) {
               overdue && styles.overdue,
             ]}
           >
-            ⏰ {formatReminder(note.reminder)}
+            {formatReminder(note.reminder)}
           </Text>
         </Pressable>
       )}
@@ -68,6 +74,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     maxWidth: "100%",
   },
+  reminder: { flexDirection: "row", alignItems: "center", gap: 4 },
   text: { fontSize: 12 },
   overdue: { textDecorationLine: "line-through" },
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Icon from "@/components/Icon";
 import Sheet from "@/components/Sheet";
 import { useTheme } from "@/hooks/useTheme";
 import { useNotes } from "@/store/notesStore";
@@ -39,13 +40,18 @@ export default function LabelPicker({ visible, onClose, noteId }) {
       </View>
       {!!draft.trim() && !exists && (
         <Pressable onPress={create} style={styles.row}>
-          <Text style={{ color: c.link }}>＋ Create "{draft.trim()}"</Text>
+          <Icon name="add" size={20} color={c.link} />
+          <Text style={{ color: c.link }}>Create "{draft.trim()}"</Text>
         </Pressable>
       )}
       <ScrollView style={styles.list}>
         {labels.map((l) => (
           <Pressable key={l.id} onPress={() => toggleNoteLabel(noteId, l.id)} style={styles.row}>
-            <Text style={[styles.box, { color: c.text }]}>{has(l.id) ? "☑" : "☐"}</Text>
+            <Icon
+              name={has(l.id) ? "check-box" : "check-box-outline-blank"}
+              size={22}
+              color={c.text}
+            />
             <Text style={{ color: c.text, fontSize: 15, flex: 1 }}>{l.name}</Text>
           </Pressable>
         ))}
@@ -67,7 +73,6 @@ export default function LabelPicker({ visible, onClose, noteId }) {
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 40 },
   input: { flex: 1, fontSize: 15, padding: 0, paddingVertical: 8 },
-  box: { fontSize: 20 },
   list: { flexGrow: 0 },
   footer: { flexDirection: "row", justifyContent: "flex-end" },
 });

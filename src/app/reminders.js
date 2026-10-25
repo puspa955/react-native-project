@@ -8,6 +8,7 @@ export default function RemindersScreen() {
   return (
     <NotesGrid
       notes={notes}
+      emptyIcon={searching ? "search" : "notifications-none"}
       emptyText={searching ? "No matching notes" : "Notes with upcoming reminders appear here"}
     />
   );
