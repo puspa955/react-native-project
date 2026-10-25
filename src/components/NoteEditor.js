@@ -4,16 +4,19 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import BackgroundPopover from "@/components/BackgroundPopover";
 import Checklist from "@/components/Checklist";
 import DrawingCanvas from "@/components/DrawingCanvas";
+import FormatBar from "@/components/FormatBar";
 import Icon from "@/components/Icon";
 import LabelPicker from "@/components/LabelPicker";
 import NoteBackground from "@/components/NoteBackground";
 import NoteChips from "@/components/NoteChips";
 import NoteMedia from "@/components/NoteMedia";
 import ReminderPicker from "@/components/ReminderPicker";
+import RichBody from "@/components/RichBody";
 import Sheet from "@/components/Sheet";
 import Tip from "@/components/Tip";
 import { useTheme } from "@/hooks/useTheme";
 import { pickImages } from "@/lib/images";
+import { splitBody } from "@/lib/richText";
 import { archiveNotes, trashNotes } from "@/lib/noteActions";
 import { openNote } from "@/lib/openNote";
 import { isEmptyNote, useNotes } from "@/store/notesStore";
@@ -37,6 +40,13 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false); // the "Background options" popover
   const paletteRef = useRef(null); // the button the popover opens next to
+  const [formatOpen, setFormatOpen] = useState(false); // the "Aa" formatting bar
+  const [focusedLine, setFocusedLine] = useState(0); // the line the formatting bar changes
+  // Where the cursor was last. Formatting only applies to the note's text, so while the cursor is in
+  // the title the bar is closed and the "Aa" button is greyed out. (Set on focus only: pressing a
+  // bar button blurs the text field, which must not count as leaving it.)
+  const [cursorIn, setCursorIn] = useState("body");
+  const inTitle = cursorIn === "title";
   // the drawing canvas: closed, or open on a new drawing ({}) or an existing one
   const [drawing, setDrawing] = useState(null);
   const card = variant !== "page";
@@ -80,7 +90,7 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
   }
 
   const isList = note.type === "list";
-  const dim = { opacity: 0.45 }; // "off" state for toggle buttons
+  const on = { backgroundColor: c.active }; // highlight behind a toggle button that is switched on
   const tp = card ? "top" : "bottom"; // card buttons sit at the bottom, so tooltips go above them
 
   const makeCopy = () => {
@@ -90,16 +100,40 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
       .showToast("Copy created", "Open", () => openNote(router, copyId));
   };
 
+  // change the look of the line the cursor is on
+  const formatLine = (patch) => {
+    const { lines, fmts } = splitBody(note);
+    const i = Math.min(focusedLine, lines.length - 1);
+    fmts[i] = { ...fmts[i], ...patch };
+    update(note.id, { lineFormats: fmts });
+  };
+  const currentFmt = (() => {
+    const { lines, fmts } = splitBody(note);
+    return fmts[Math.min(focusedLine, lines.length - 1)];
+  })();
+
   // the row of small icons
   const actions = (
     <View style={styles.actions}>
+      {!isList && (
+        <Tip label="Formatting options" placement={tp}>
+          <Pressable
+            onPress={() => setFormatOpen((v) => !v)}
+            disabled={inTitle}
+            hitSlop={8}
+            style={[styles.iconBtn, formatOpen && on, inTitle && styles.off]}
+          >
+            <Icon name="text-format" size={22} color={formatOpen ? c.text : c.muted} />
+          </Pressable>
+        </Tip>
+      )}
       <Tip label="Remind me" placement={tp}>
         <Pressable
           onPress={() => setReminderOpen(true)}
           hitSlop={8}
-          style={!note.reminder && dim}
+          style={[styles.iconBtn, !!note.reminder && on]}
         >
-          <Icon name="notifications-none" size={22} color={c.text} />
+          <Icon name="notifications-none" size={22} color={note.reminder ? c.text : c.muted} />
         </Pressable>
       </Tip>
       <Tip label="Background options" placement={tp}>
@@ -107,14 +141,18 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
           ref={paletteRef}
           onPress={() => setPaletteOpen(true)}
           hitSlop={8}
-          style={note.color === "default" && !note.background && dim}
+          style={[styles.iconBtn, (paletteOpen || note.color !== "default" || !!note.background) && on]}
         >
-          <Icon name="palette" size={22} color={c.text} />
+          <Icon
+            name="palette"
+            size={22}
+            color={paletteOpen || note.color !== "default" || note.background ? c.text : c.muted}
+          />
         </Pressable>
       </Tip>
       <Tip label="Add image" placement={tp}>
-        <Pressable onPress={addImage} hitSlop={8}>
-          <Icon name="image" size={22} color={c.text} />
+        <Pressable onPress={addImage} hitSlop={8} style={styles.iconBtn}>
+          <Icon name="image" size={22} color={c.muted} />
         </Pressable>
       </Tip>
       <Tip label={note.archived ? "Unarchive" : "Archive"} placement={tp}>
@@ -124,13 +162,14 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
             onClose();
           }}
           hitSlop={8}
+          style={styles.iconBtn}
         >
-          <Icon name={note.archived ? "unarchive" : "archive"} size={22} color={c.text} />
+          <Icon name={note.archived ? "unarchive" : "archive"} size={22} color={c.muted} />
         </Pressable>
       </Tip>
       <Tip label="More" placement={tp}>
-        <Pressable onPress={() => setMoreOpen(true)} hitSlop={8}>
-          <Icon name="more-vert" size={22} color={c.text} />
+        <Pressable onPress={() => setMoreOpen(true)} hitSlop={8} style={styles.iconBtn}>
+          <Icon name="more-vert" size={22} color={c.muted} />
         </Pressable>
       </Tip>
     </View>
@@ -188,6 +227,10 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
               placeholder="Title"
               placeholderTextColor={c.muted}
               autoFocus={isEmptyNote(note) && !isList}
+              onFocus={() => {
+                setCursorIn("title");
+                setFormatOpen(false);
+              }}
               style={[styles.title, noOutline, { color: c.text }]}
             />
             <Tip label={note.pinned ? "Unpin note" : "Pin note"} placement={tp}>
@@ -210,14 +253,14 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
               focusFirst={isEmptyNote(note)}
             />
           ) : (
-            <TextInput
+            <RichBody
               key="text"
-              value={note.body}
-              onChangeText={(t) => update(note.id, { body: t })}
-              placeholder="Take a note..."
-              placeholderTextColor={c.muted}
-              multiline
-              style={[styles.body, card && styles.bodyCard, noOutline, { color: c.text }]}
+              note={note}
+              minHeight={card ? 90 : 300}
+              onFocusLine={(i) => {
+                setFocusedLine(i);
+                setCursorIn("body");
+              }}
             />
           )}
           <NoteChips
@@ -227,6 +270,10 @@ export default function NoteEditor({ noteId, onClose, variant = "page" }) {
           />
         </View>
       </ScrollView>
+
+      {formatOpen && !isList && (
+        <FormatBar fmt={currentFmt} onChange={formatLine} placement={card ? "top" : "bottom"} />
+      )}
 
       {card && (
         <View style={styles.bar}>
@@ -301,7 +348,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 52,
   },
-  actions: { flexDirection: "row", alignItems: "center", gap: 22 },
+  actions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   pageContent: { alignItems: "center", flexGrow: 1, paddingHorizontal: 16 },
   cardScroll: { flexGrow: 0, flexShrink: 1 },
   cardContent: { padding: 16, paddingBottom: 4 },
@@ -316,6 +364,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   bodyCard: { minHeight: 90 },
+  off: { opacity: 0.2 }, // a button that can't be used right now
   // the icons and "Close" share one row; "Close" drops to its own row only if there is no room
   bar: {
     flexDirection: "row",

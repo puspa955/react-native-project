@@ -42,6 +42,7 @@ export const useNotes = create(
           type: "text",
           title: "",
           body: "",
+          lineFormats: [], // the look of each line of body (heading, bold, ...), see lib/richText.js
           items: [],
           labels: [],
           images: [], // [{ id, uri, width, height }]
@@ -86,6 +87,7 @@ export const useNotes = create(
           get().update(id, {
             type: "text",
             body: n.items.map((i) => i.text).join("\n"),
+            lineFormats: [],
             items: [],
           });
         } else {
@@ -93,6 +95,7 @@ export const useNotes = create(
           get().update(id, {
             type: "list",
             body: "",
+            lineFormats: [],
             items: (lines.length ? lines : [""]).map(newItem),
           });
         }
@@ -180,6 +183,7 @@ export const useNotes = create(
           type: n.type,
           title: n.title,
           body: n.body,
+          lineFormats: n.lineFormats || [],
           items: (n.items || []).map((i) => ({ ...i, id: newId() })),
           labels: n.labels || [],
           images: (n.images || []).map((i) => ({ ...i, id: newId() })),

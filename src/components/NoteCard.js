@@ -2,6 +2,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Icon from "@/components/Icon";
+import FormattedText from "@/components/FormattedText";
 import NoteBackground from "@/components/NoteBackground";
 import NoteChips from "@/components/NoteChips";
 import NoteMedia from "@/components/NoteMedia";
@@ -63,11 +64,7 @@ export default function NoteCard({ note, inTrash }) {
         {!!note.title && (
           <Text style={[styles.title, { color: c.text }]}>{note.title}</Text>
         )}
-        {!!note.body && (
-          <Text style={[styles.body, { color: c.text }]} numberOfLines={10}>
-            {note.body}
-          </Text>
-        )}
+        {!!note.body && <FormattedText note={note} />}
         {note.type === "list" && (
           <View style={styles.items}>
             {shown.map((i) => (
