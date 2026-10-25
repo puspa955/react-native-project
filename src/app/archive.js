@@ -1,7 +1,14 @@
 import NotesGrid from "@/components/NotesGrid";
 import { useNoteList } from "@/store/notesStore";
+import { useSettings } from "@/store/settingsStore";
 
 export default function ArchiveScreen() {
   const notes = useNoteList("archive");
-  return <NotesGrid notes={notes} emptyText="Your archived notes appear here" />;
+  const searching = useSettings((s) => s.query.trim() !== "");
+  return (
+    <NotesGrid
+      notes={notes}
+      emptyText={searching ? "No matching notes" : "Your archived notes appear here"}
+    />
+  );
 }

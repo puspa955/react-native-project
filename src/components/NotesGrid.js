@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import NoteCard from "@/components/NoteCard";
 import { useColumns } from "@/hooks/useColumns";
-import { colors } from "@/theme";
+import { useTheme } from "@/hooks/useTheme";
 
 // Round-robin masonry: note 0 -> col 0, note 1 -> col 1, ...
 function Masonry({ notes, inTrash }) {
@@ -29,6 +29,7 @@ export default function NotesGrid({
   groupPinned = false,
   emptyText,
 }) {
+  const c = useTheme();
   const pinned = groupPinned ? notes.filter((n) => n.pinned) : [];
   const others = groupPinned ? notes.filter((n) => !n.pinned) : notes;
 
@@ -39,12 +40,16 @@ export default function NotesGrid({
     >
       <View style={styles.inner}>
         {header}
-        {notes.length === 0 && <Text style={styles.empty}>{emptyText}</Text>}
+        {notes.length === 0 && (
+          <Text style={[styles.empty, { color: c.muted }]}>{emptyText}</Text>
+        )}
         {pinned.length > 0 && (
           <>
-            <Text style={styles.label}>PINNED</Text>
+            <Text style={[styles.label, { color: c.muted }]}>PINNED</Text>
             <Masonry notes={pinned} inTrash={inTrash} />
-            {others.length > 0 && <Text style={styles.label}>OTHERS</Text>}
+            {others.length > 0 && (
+              <Text style={[styles.label, { color: c.muted }]}>OTHERS</Text>
+            )}
           </>
         )}
         {others.length > 0 && <Masonry notes={others} inTrash={inTrash} />}
@@ -62,9 +67,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     letterSpacing: 1,
-    color: colors.muted,
     marginTop: 16,
     marginBottom: 8,
   },
-  empty: { textAlign: "center", color: colors.muted, marginTop: 48, fontSize: 16 },
+  empty: { textAlign: "center", marginTop: 48, fontSize: 16 },
 });

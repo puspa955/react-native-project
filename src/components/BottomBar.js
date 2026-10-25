@@ -1,18 +1,26 @@
 import { usePathname, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { NAV_ITEMS } from "@/components/Sidebar";
-import { colors } from "@/theme";
+import { MOBILE_NAV } from "@/components/Sidebar";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function BottomBar() {
+  const c = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.bar, { paddingBottom: insets.bottom }]}>
-      {NAV_ITEMS.map((item) => {
-        const active = pathname === item.href;
+    <View
+      style={[
+        styles.bar,
+        { paddingBottom: insets.bottom, borderTopColor: c.border, backgroundColor: c.surface },
+      ]}
+    >
+      {MOBILE_NAV.map((item) => {
+        // a label's page (/label/xyz) counts as the Labels tab
+        const active =
+          pathname === item.href || (item.href === "/labels" && pathname.startsWith("/label/"));
         return (
           <Pressable
             key={item.href}
@@ -20,7 +28,14 @@ export default function BottomBar() {
             style={styles.item}
           >
             <Text style={[styles.icon, !active && { opacity: 0.5 }]}>{item.icon}</Text>
-            <Text style={[styles.label, active && styles.labelActive]}>
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.label,
+                { color: active ? c.text : c.muted },
+                active && styles.labelActive,
+              ]}
+            >
               {item.label}
             </Text>
           </Pressable>
@@ -31,14 +46,9 @@ export default function BottomBar() {
 }
 
 const styles = StyleSheet.create({
-  bar: {
-    flexDirection: "row",
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.surface,
-  },
+  bar: { flexDirection: "row", borderTopWidth: 1 },
   item: { flex: 1, alignItems: "center", paddingVertical: 8, gap: 2 },
   icon: { fontSize: 20 },
-  label: { fontSize: 11, color: colors.muted },
-  labelActive: { color: colors.text, fontWeight: "600" },
+  label: { fontSize: 10 },
+  labelActive: { fontWeight: "600" },
 });
