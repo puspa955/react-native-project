@@ -1,116 +1,87 @@
-import { useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import Checklist from "@/components/Checklist";
-import ColorPicker from "@/components/ColorPicker";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Icon from "@/components/Icon";
+import NoteEditor from "@/components/NoteEditor";
 import Tip from "@/components/Tip";
 import { useTheme } from "@/hooks/useTheme";
+import { createNote } from "@/lib/openNote";
 import { newItem, useNotes } from "@/store/notesStore";
-import { noteBg } from "@/theme";
+import { useSettings } from "@/store/settingsStore";
 
-const noOutline = Platform.select({ web: { outlineStyle: "none" }, default: {} });
-
-// "Take a note..." bar that expands into a mini editor (text note or checklist).
+// The web "Take a note..." bar. Clicking it makes a real (empty) note and shows the normal
+// editor card right here, with the same buttons as the note dialog. Closing an empty card
+// deletes the note again; while it is open the note is hidden from the grid below.
 // defaultLabels: label ids new notes start with (used on a label's page).
 export default function Composer({ defaultLabels = [] }) {
   const c = useTheme();
-  const add = useNotes((s) => s.add);
-  // null = collapsed, otherwise "text" | "list"
-  const [mode, setMode] = useState(null);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [items, setItems] = useState([]);
-  const [color, setColor] = useState("default");
-  const bodyRef = useRef(null);
+  const router = useRouter();
+  const [noteId, setNoteId] = useState(null);
+  const setComposingId = useSettings((s) => s.setComposingId);
+
+  useEffect(() => {
+    setComposingId(noteId);
+    return () => setComposingId(null);
+  }, [noteId, setComposingId]);
 
   const start = (type) => {
-    setItems(type === "list" ? [newItem()] : []);
-    setMode(type);
+    const id = useNotes.getState().add({
+      type,
+      labels: defaultLabels,
+      items: type === "list" ? [newItem()] : [],
+    });
+    setNoteId(id);
   };
 
-  const close = () => {
-    const cleanItems = items.filter((i) => i.text.trim());
-    const hasContent =
-      title.trim() || (mode === "list" ? cleanItems.length > 0 : body.trim());
-    if (hasContent) {
-      add({
-        type: mode,
-        title: title.trim(),
-        body: mode === "text" ? body.trim() : "",
-        items: mode === "list" ? cleanItems : [],
-        color,
-        labels: defaultLabels,
-      });
-    }
-    setTitle("");
-    setBody("");
-    setItems([]);
-    setColor("default");
-    setMode(null);
-  };
+  if (noteId) {
+    return <NoteEditor noteId={noteId} variant="inline" onClose={() => setNoteId(null)} />;
+  }
 
-  const shell = {
-    backgroundColor: noteBg(color, c.dark),
-    borderColor: c.border,
-  };
-
-  if (!mode) {
-    return (
-      <Pressable style={[styles.box, styles.collapsed, shell]} onPress={() => start("text")}>
-        <Text style={[styles.placeholder, { color: c.muted }]}>Take a note...</Text>
+  return (
+    <Pressable
+      style={[styles.bar, { backgroundColor: c.surface, borderColor: c.border }]}
+      onPress={() => start("text")}
+    >
+      <Text style={[styles.placeholder, { color: c.muted }]}>Take a note...</Text>
+      <View style={styles.shortcuts}>
         <Tip label="New list">
           <Pressable onPress={() => start("list")} hitSlop={8}>
             <Icon name="check-box" size={22} color={c.muted} />
           </Pressable>
         </Tip>
-      </Pressable>
-    );
-  }
-
-  return (
-    <View style={[styles.box, shell]}>
-      <TextInput
-        autoFocus={mode === "text"}
-        value={title}
-        onChangeText={setTitle}
-        placeholder="Title"
-        placeholderTextColor={c.muted}
-        style={[styles.title, noOutline, { color: c.text }]}
-        returnKeyType="next"
-        onSubmitEditing={() => bodyRef.current?.focus()}
-      />
-      {mode === "text" ? (
-        <TextInput
-          ref={bodyRef}
-          value={body}
-          onChangeText={setBody}
-          placeholder="Take a note..."
-          placeholderTextColor={c.muted}
-          multiline
-          style={[styles.body, noOutline, { color: c.text }]}
-        />
-      ) : (
-        <Checklist items={items} onChange={setItems} focusFirst />
-      )}
-      <ColorPicker value={color} onChange={setColor} />
-      <View style={styles.footer}>
-        <Pressable onPress={close}>
-          <Text style={[styles.close, { color: c.text }]}>Close</Text>
-        </Pressable>
+        <Tip label="New note with drawing">
+          <Pressable
+            onPress={() => createNote(router, { labels: defaultLabels, action: "draw" })}
+            hitSlop={8}
+          >
+            <Icon name="brush" size={22} color={c.muted} />
+          </Pressable>
+        </Tip>
+        <Tip label="New note with image">
+          <Pressable
+            onPress={() => createNote(router, { labels: defaultLabels, action: "image" })}
+            hitSlop={8}
+          >
+            <Icon name="image" size={22} color={c.muted} />
+          </Pressable>
+        </Tip>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  box: {
+  bar: {
     width: "100%",
     maxWidth: 600,
     alignSelf: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1,
     borderRadius: 8,
-    padding: 12,
-    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 24,
     shadowColor: "#000",
     shadowOpacity: 0.15,
@@ -118,15 +89,6 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     elevation: 2,
   },
-  collapsed: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-  },
   placeholder: { fontSize: 15 },
-  title: { fontSize: 16, fontWeight: "600", padding: 0 },
-  body: { fontSize: 14, minHeight: 60, padding: 0, textAlignVertical: "top" },
-  footer: { flexDirection: "row", justifyContent: "flex-end" },
-  close: { fontSize: 14, fontWeight: "600", padding: 4 },
+  shortcuts: { flexDirection: "row", alignItems: "center", gap: 18 },
 });

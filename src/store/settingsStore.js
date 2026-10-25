@@ -31,6 +31,15 @@ export const useSettings = create(
       drawerOpen: false,
       setDrawerOpen: (drawerOpen) => set({ drawerOpen }),
 
+      // "do this as soon as the editor opens" for a just-created note: { noteId, action }
+      // where action is "image" or "draw" (used by the new-note shortcut buttons)
+      pending: null,
+      setPending: (pending) => set({ pending }),
+
+      // the note being written in the inline "Take a note..." card (hidden from the grid meanwhile)
+      composingId: null,
+      setComposingId: (composingId) => set({ composingId }),
+
       // desktop: the note currently open in the dialog (null = none)
       openNoteId: null,
       setOpenNoteId: (openNoteId) => set({ openNoteId }),

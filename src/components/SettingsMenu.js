@@ -73,7 +73,7 @@ export function SettingsDialog() {
           <Icon
             name={mode === o.value ? "radio-button-checked" : "radio-button-unchecked"}
             size={22}
-            color={mode === o.value ? c.link : c.muted}
+            color={mode === o.value ? c.primary : c.muted}
           />
           <Text style={{ color: c.text, fontSize: 15 }}>{o.label}</Text>
         </Pressable>

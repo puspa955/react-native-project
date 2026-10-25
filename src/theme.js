@@ -28,7 +28,8 @@ export const lightColors = {
   hover: "#f1f3f4",
   active: "#feefc3",
   danger: "#d93025",
-  link: "#1a73e8",
+  primary: "#f9ab00", // rings, selected states, check marks
+  link: "#b06000", // text buttons and links (darker amber so it stays readable on white)
   input: "#f1f3f4",
 };
 
@@ -41,7 +42,8 @@ export const darkColors = {
   hover: "#2d2e31",
   active: "#41331c",
   danger: "#f28b82",
-  link: "#8ab4f8",
+  primary: "#fbbc04",
+  link: "#fdd663",
   input: "#525355",
 };
 

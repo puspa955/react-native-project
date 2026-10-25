@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useIsWide } from "@/hooks/useColumns";
+import { IS_WEB } from "@/lib/platform";
 import { useSettings } from "@/store/settingsStore";
 
 const SHOW_MS = 5000;
@@ -10,7 +10,6 @@ const SHOW_MS = 5000;
 export default function Snackbar() {
   const toast = useSettings((s) => s.toast);
   const hideToast = useSettings((s) => s.hideToast);
-  const wide = useIsWide();
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -24,7 +23,7 @@ export default function Snackbar() {
   return (
     <View
       pointerEvents="box-none"
-      style={[styles.wrap, { bottom: wide ? 24 : 96 + insets.bottom }]}
+      style={[styles.wrap, { bottom: IS_WEB ? 24 : 96 + insets.bottom }]}
     >
       <View style={styles.bar}>
         <Text style={styles.message}>{toast.message}</Text>
@@ -59,5 +58,5 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   message: { flex: 1, color: "#ffffff", fontSize: 14 },
-  action: { color: "#8ab4f8", fontSize: 14, fontWeight: "600" },
+  action: { color: "#fdd663", fontSize: 14, fontWeight: "600" },
 });

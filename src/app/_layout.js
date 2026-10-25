@@ -1,7 +1,7 @@
 import { Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Drawer from "@/components/Drawer";
 import EditLabelsModal from "@/components/EditLabelsModal";
@@ -12,7 +12,8 @@ import { SettingsButton, SettingsDialog } from "@/components/SettingsMenu";
 import Sidebar from "@/components/Sidebar";
 import Snackbar from "@/components/Snackbar";
 import Tip from "@/components/Tip";
-import { useIsWide } from "@/hooks/useColumns";
+import { useHasSidebar } from "@/hooks/useColumns";
+import { IS_WEB } from "@/lib/platform";
 import { useTheme } from "@/hooks/useTheme";
 import { archiveNotes, pinNotes, trashNotes } from "@/lib/noteActions";
 import { useNotes } from "@/store/notesStore";
@@ -65,8 +66,9 @@ function SelectionBar() {
   );
 }
 
-function Header({ wide }) {
+function Header({ hasSidebar }) {
   const c = useTheme();
+  const { width } = useWindowDimensions();
   const query = useSettings((s) => s.query);
   const setQuery = useSettings((s) => s.setQuery);
   const layout = useSettings((s) => s.layout);
@@ -78,23 +80,23 @@ function Header({ wide }) {
     <View style={[styles.header, { borderBottomColor: c.border }]}>
       {/* left: menu button (collapses the sidebar on desktop, opens the drawer on phones) */}
       <Tip label="Main menu">
-        <Pressable onPress={wide ? toggleSidebar : () => setDrawerOpen(true)} hitSlop={8}>
+        <Pressable onPress={hasSidebar ? toggleSidebar : () => setDrawerOpen(true)} hitSlop={8}>
           <Icon name="menu" size={26} color={c.text} />
         </Pressable>
       </Tip>
-      {wide && (
+      {IS_WEB && width >= 560 && (
         <View style={styles.brand}>
           <Icon name="lightbulb" size={30} color="#fbbc04" />
-          <Text style={[styles.logo, { color: c.text }]}>Keep</Text>
+          <Text style={[styles.logo, { color: c.text }]}>Jotter</Text>
         </View>
       )}
 
-      <View style={[styles.search, wide && styles.searchWide, { backgroundColor: c.input }]}>
+      <View style={[styles.search, hasSidebar && styles.searchWide, { backgroundColor: c.input }]}>
         <Icon name="search" size={20} color={c.muted} />
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder={wide ? "Search" : "Search your notes"}
+          placeholder={IS_WEB ? "Search" : "Search your notes"}
           placeholderTextColor={c.muted}
           style={[styles.searchInput, noOutline, { color: c.text }]}
         />
@@ -107,8 +109,8 @@ function Header({ wide }) {
         )}
       </View>
 
-      {/* pushes the buttons to the far right on wide screens */}
-      {wide && <View style={styles.flex} />}
+      {/* pushes the buttons to the far right when there is room */}
+      {hasSidebar && <View style={styles.flex} />}
 
       <Tip label={layout === "grid" ? "List view" : "Grid view"}>
         <Pressable onPress={toggleLayout} hitSlop={8}>
@@ -126,20 +128,24 @@ function Header({ wide }) {
 
 export default function RootLayout() {
   const c = useTheme();
-  const wide = useIsWide();
+  const hasSidebar = useHasSidebar();
   const pathname = usePathname();
   const inEditor = pathname.startsWith("/note/");
   const purgeOldTrash = useNotes((s) => s.purgeOldTrash);
+  const purgeEmpty = useNotes((s) => s.purgeEmpty);
   const selecting = useSettings((s) => s.selected.length > 0);
   const clearSelection = useSettings((s) => s.clearSelection);
   const sidebarOpen = useSettings((s) => s.sidebarOpen);
 
   useEffect(() => {
     // wait for AsyncStorage to load the saved notes before purging
-    const run = () => purgeOldTrash();
+    const run = () => {
+      purgeOldTrash();
+      purgeEmpty();
+    };
     if (useNotes.persist.hasHydrated()) run();
     else return useNotes.persist.onFinishHydration(run);
-  }, [purgeOldTrash]);
+  }, [purgeOldTrash, purgeEmpty]);
 
   // switching screens drops the selection
   useEffect(() => {
@@ -149,9 +155,9 @@ export default function RootLayout() {
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: c.bg }]} edges={["top"]}>
       <StatusBar style={c.dark ? "light" : "dark"} />
-      {!inEditor && (selecting ? <SelectionBar /> : <Header wide={wide} />)}
+      {!inEditor && (selecting ? <SelectionBar /> : <Header hasSidebar={hasSidebar} />)}
       <View style={styles.body}>
-        {wide && <Sidebar collapsed={!sidebarOpen} />}
+        {hasSidebar && <Sidebar collapsed={!sidebarOpen} />}
         <View style={styles.flex}>
           <Stack
             screenOptions={{
@@ -162,9 +168,10 @@ export default function RootLayout() {
           />
         </View>
       </View>
-      {!wide && !inEditor && !selecting && <Fab />}
+      {!IS_WEB && !inEditor && !selecting && <Fab />}
       <Snackbar />
-      {wide ? <NoteDialog /> : <Drawer />}
+      {IS_WEB && <NoteDialog />}
+      {!hasSidebar && <Drawer />}
       <EditLabelsModal />
       <SettingsDialog />
     </SafeAreaView>

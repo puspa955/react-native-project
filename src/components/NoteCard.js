@@ -2,7 +2,9 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Icon from "@/components/Icon";
+import NoteBackground from "@/components/NoteBackground";
 import NoteChips from "@/components/NoteChips";
+import NoteMedia from "@/components/NoteMedia";
 import Tip from "@/components/Tip";
 import { useTheme } from "@/hooks/useTheme";
 import { confirmDelete } from "@/lib/confirm";
@@ -53,9 +55,11 @@ export default function NoteCard({ note, inTrash }) {
           styles.card,
           { backgroundColor: noteBg(note.color, c.dark), borderColor: c.border },
           hovered && styles.hovered,
-          selected && { borderColor: c.link, borderWidth: 2, padding: 11 },
+          selected && { borderColor: c.primary, borderWidth: 2, padding: 11 },
         ]}
       >
+        <NoteBackground background={note.background} />
+        <NoteMedia note={note} />
         {!!note.title && (
           <Text style={[styles.title, { color: c.text }]}>{note.title}</Text>
         )}
@@ -125,7 +129,7 @@ export default function NoteCard({ note, inTrash }) {
             <Icon
               name={selected ? "check-circle" : "radio-button-unchecked"}
               size={20}
-              color={selected ? c.link : c.muted}
+              color={selected ? c.primary : c.muted}
             />
           </Pressable>
         </Tip>
@@ -148,7 +152,7 @@ export default function NoteCard({ note, inTrash }) {
 
 const styles = StyleSheet.create({
   wrap: { position: "relative" },
-  card: { borderWidth: 1, borderRadius: 8, padding: 12, gap: 6, minHeight: 44 },
+  card: { borderWidth: 1, borderRadius: 8, padding: 12, gap: 6, minHeight: 44, overflow: "hidden" },
   hovered: {
     shadowColor: "#000",
     shadowOpacity: 0.3,

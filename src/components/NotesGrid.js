@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Icon from "@/components/Icon";
 import NoteCard from "@/components/NoteCard";
 import { useColumns } from "@/hooks/useColumns";
+import { IS_WEB } from "@/lib/platform";
 import { useTheme } from "@/hooks/useTheme";
 import { useSettings } from "@/store/settingsStore";
 
@@ -39,7 +40,7 @@ export default function NotesGrid({
 
   return (
     <ScrollView
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, !IS_WEB && styles.scrollPhone]}
       keyboardShouldPersistTaps="handled"
     >
       <View style={[styles.inner, listLayout && styles.innerList]}>
@@ -67,6 +68,7 @@ export default function NotesGrid({
 
 const styles = StyleSheet.create({
   scroll: { padding: 16, alignItems: "center", flexGrow: 1 },
+  scrollPhone: { paddingBottom: 110 }, // keeps the last note clear of the + button
   inner: { width: "100%", maxWidth: 1200 },
   innerList: { maxWidth: 600 },
   masonry: { flexDirection: "row", gap: 12, alignItems: "flex-start" },

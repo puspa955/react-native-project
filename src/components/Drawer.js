@@ -23,7 +23,7 @@ export default function Drawer() {
             { backgroundColor: c.bg, borderRightColor: c.border, paddingTop: insets.top + 8 },
           ]}
         >
-          <Text style={styles.logo}>Keep</Text>
+          <Text style={styles.logo}>Jotter</Text>
           <Sidebar onNavigate={close} style={styles.sidebar} />
         </Pressable>
       </Pressable>

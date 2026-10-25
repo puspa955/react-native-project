@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 import Composer from "@/components/Composer";
 import Icon from "@/components/Icon";
 import NotesGrid from "@/components/NotesGrid";
-import { useIsWide } from "@/hooks/useColumns";
+import { IS_WEB } from "@/lib/platform";
 import { useTheme } from "@/hooks/useTheme";
 import { useNoteList, useNotes } from "@/store/notesStore";
 import { useSettings } from "@/store/settingsStore";
@@ -14,7 +14,6 @@ export default function LabelScreen() {
   const label = useNotes((s) => s.labels.find((l) => l.id === id));
   const notes = useNoteList(`label:${id}`);
   const searching = useSettings((s) => s.query.trim() !== "");
-  const wide = useIsWide();
 
   if (!label) {
     return (
@@ -34,7 +33,7 @@ export default function LabelScreen() {
             <Icon name="label-outline" size={26} color={c.muted} />
             <Text style={{ color: c.text, fontSize: 20, fontWeight: "600" }}>{label.name}</Text>
           </View>
-          {wide && !searching && <Composer defaultLabels={[label.id]} />}
+          {IS_WEB && !searching && <Composer defaultLabels={[label.id]} />}
         </>
       }
       emptyIcon={searching ? "search" : "label-outline"}

@@ -14,6 +14,7 @@ export function newItem(text = "") {
 
 export function isEmptyNote(n) {
   if (n.title.trim() || n.body.trim()) return false;
+  if ((n.images || []).length || (n.drawings || []).length) return false;
   return (n.items || []).every((i) => !i.text.trim());
 }
 
@@ -43,7 +44,10 @@ export const useNotes = create(
           body: "",
           items: [],
           labels: [],
+          images: [], // [{ id, uri, width, height }]
+          drawings: [], // [{ id, width, height, strokes: [{ id, tool, color, size, points }] }]
           color: "default",
+          background: null, // key of a background picture (see backgrounds.js), or null
           pinned: false,
           archived: false,
           reminder: null, // timestamp (ms) or null
@@ -178,8 +182,40 @@ export const useNotes = create(
           body: n.body,
           items: (n.items || []).map((i) => ({ ...i, id: newId() })),
           labels: n.labels || [],
+          images: (n.images || []).map((i) => ({ ...i, id: newId() })),
+          drawings: (n.drawings || []).map((d) => ({ ...d, id: newId() })),
           color: n.color,
+          background: n.background || null,
         });
+      },
+
+      // A note has a colour OR a background picture: choosing one clears the other.
+      setColor: (id, color) => get().update(id, { color, background: null }),
+      setBackground: (id, background) =>
+        get().update(id, { background, color: "default" }),
+
+      // ---- images and drawings ----
+      addImages: (id, images) => {
+        const n = get().notes.find((x) => x.id === id);
+        if (n) get().update(id, { images: [...(n.images || []), ...images] });
+      },
+      removeImage: (id, imageId) => {
+        const n = get().notes.find((x) => x.id === id);
+        if (n) get().update(id, { images: (n.images || []).filter((i) => i.id !== imageId) });
+      },
+      // add a new drawing, or replace it when a drawing with the same id exists
+      saveDrawing: (id, drawing) => {
+        const n = get().notes.find((x) => x.id === id);
+        if (!n) return;
+        const list = n.drawings || [];
+        const exists = list.some((d) => d.id === drawing.id);
+        get().update(id, {
+          drawings: exists ? list.map((d) => (d.id === drawing.id ? drawing : d)) : [...list, drawing],
+        });
+      },
+      removeDrawing: (id, drawingId) => {
+        const n = get().notes.find((x) => x.id === id);
+        if (n) get().update(id, { drawings: (n.drawings || []).filter((d) => d.id !== drawingId) });
       },
 
       restore: (id) => get().update(id, { trashedAt: null }),
@@ -190,6 +226,9 @@ export const useNotes = create(
       },
 
       emptyTrash: () => set({ notes: get().notes.filter((n) => !n.trashedAt) }),
+
+      // Drafts that were never filled in (e.g. the app was closed while a new note was open).
+      purgeEmpty: () => set({ notes: get().notes.filter((n) => n.trashedAt || !isEmptyNote(n)) }),
 
       // Notes stay in the trash for 7 days, like Google Keep.
       purgeOldTrash: () =>
@@ -258,9 +297,11 @@ export const useNotes = create(
 export function useNoteList(view) {
   const notes = useNotes((s) => s.notes);
   const query = useSettings((s) => s.query).trim();
+  const composingId = useSettings((s) => s.composingId);
   return useMemo(() => {
     const labelId = view.startsWith("label:") ? view.slice(6) : null;
     const list = notes.filter((n) => {
+      if (n.id === composingId) return false;
       if (view === "trash") return !!n.trashedAt && (!query || matches(n, query));
       if (n.trashedAt) return false;
       if (view === "reminders" && !n.reminder) return false;
@@ -271,5 +312,5 @@ export function useNoteList(view) {
     });
     if (view === "reminders") return list.sort((a, b) => a.reminder - b.reminder);
     return list.sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [notes, view, query]);
+  }, [notes, view, query, composingId]);
 }
