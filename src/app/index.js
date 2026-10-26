@@ -1,12 +1,11 @@
 import Composer from "@/components/Composer";
 import NotesGrid from "@/components/NotesGrid";
 import { IS_WEB } from "@/lib/platform";
-import { useNoteList } from "@/store/notesStore";
-import { useSettings } from "@/store/settingsStore";
+import { useNoteList, useSearching } from "@/store/notesStore";
 
 export default function NotesScreen() {
   const notes = useNoteList("notes");
-  const searching = useSettings((s) => s.query.trim() !== "");
+  const searching = useSearching();
   return (
     <NotesGrid
       notes={notes}

@@ -48,11 +48,16 @@ function Ring({ selected, color, idle }) {
 
 // Google Keep's "Background options" popover: a row of colours, and under it a row of
 // background pictures. It opens next to the button that was pressed (anchorRef).
-export default function BackgroundPopover({ visible, anchorRef, note, onClose }) {
+// `note` is the note whose current choice is shown as selected. To change several notes at once
+// pass noteIds as well (then `note` is just the first of them).
+export default function BackgroundPopover({ visible, anchorRef, note, noteIds, onClose }) {
   const c = useTheme();
   const { width, height } = useWindowDimensions();
-  const setColor = useNotes((s) => s.setColor);
-  const setBackground = useNotes((s) => s.setBackground);
+  const storeSetColor = useNotes((s) => s.setColor);
+  const storeSetBackground = useNotes((s) => s.setBackground);
+  const ids = noteIds ?? [note.id];
+  const setColor = (_id, color) => ids.forEach((id) => storeSetColor(id, color));
+  const setBackground = (_id, background) => ids.forEach((id) => storeSetBackground(id, background));
   const [anchor, setAnchor] = useState(null); // where the button is on screen
 
   useEffect(() => {

@@ -2,8 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-// Saved: mode ("system" | "light" | "dark"), layout ("grid" | "list"), sidebarOpen.
-// Not saved (UI state only): search query, dialogs/drawer, selected notes, toast.
+// Saved: mode ("system" | "light" | "dark"), layout ("grid" | "list"), sortBy, sidebarOpen.
+// Not saved (UI state only): search query and filters, dialogs/drawer, selected notes, toast.
 export const useSettings = create(
   persist(
     (set, get) => ({
@@ -14,11 +14,30 @@ export const useSettings = create(
       sidebarOpen: true,
       toggleSidebar: () => set({ sidebarOpen: !get().sidebarOpen }),
 
+      // how notes are ordered: see SORT_OPTIONS in notesStore.js
+      sortBy: "edited",
+      setSortBy: (sortBy) => set({ sortBy }),
+
       layout: "grid",
       toggleLayout: () => set({ layout: get().layout === "grid" ? "list" : "grid" }),
 
       query: "",
       setQuery: (query) => set({ query }),
+
+      // Search filters (the panel under the search box): note types, colours and labels.
+      // A note must match every kind that has something picked, and any one of the picks inside it.
+      filters: { types: [], colors: [], labels: [] },
+      toggleFilter: (kind, value) =>
+        // one filter at a time: picking another replaces it, picking the same one clears it
+        set((s) => {
+          const empty = { types: [], colors: [], labels: [] };
+          return { filters: s.filters[kind].includes(value) ? empty : { ...empty, [kind]: [value] } };
+        }),
+      clearFilters: () => set({ filters: { types: [], colors: [], labels: [] } }),
+
+      // phones: the full-screen search is open (the header turns into a search box)
+      searchOpen: false,
+      setSearchOpen: (searchOpen) => set({ searchOpen }),
 
       labelsModalOpen: false,
       setLabelsModalOpen: (labelsModalOpen) => set({ labelsModalOpen }),
@@ -66,6 +85,7 @@ export const useSettings = create(
       partialize: (state) => ({
         mode: state.mode,
         layout: state.layout,
+        sortBy: state.sortBy,
         sidebarOpen: state.sidebarOpen,
       }),
     }

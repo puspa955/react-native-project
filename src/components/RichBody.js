@@ -11,7 +11,7 @@ const noOutline = Platform.select({ web: { outlineStyle: "none" }, default: {} }
 // the one above. The note's `body` stays plain text (lines joined by "\n") and the looks are
 // saved in `lineFormats`, see lib/richText.js.
 //   onFocusLine(i): tells the editor which line the formatting bar should change.
-export default function RichBody({ note, minHeight = 90, onFocusLine }) {
+export default function RichBody({ note, minHeight = 0, onFocusLine }) {
   const c = useTheme();
   const { lines, fmts } = splitBody(note);
   const inputs = useRef([]); // the text field of each line

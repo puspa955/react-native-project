@@ -82,7 +82,8 @@ export function useInkColor() {
 // Shows a saved drawing at the given width (height keeps the drawing's shape).
 export function DrawingView({ drawing, width }) {
   const ink = useInkColor();
-  const scale = width / drawing.width;
+  // (a saved width under 50 can only be bad data from an earlier bug: show it unscaled, not huge)
+  const scale = drawing.width >= 50 ? width / drawing.width : 1;
   return (
     <View style={{ width, height: drawing.height * scale, overflow: "hidden" }} pointerEvents="none">
       {drawing.strokes.map((s) => (

@@ -1,10 +1,9 @@
 import NotesGrid from "@/components/NotesGrid";
-import { useNoteList } from "@/store/notesStore";
-import { useSettings } from "@/store/settingsStore";
+import { useNoteList, useSearching } from "@/store/notesStore";
 
 export default function ArchiveScreen() {
   const notes = useNoteList("archive");
-  const searching = useSettings((s) => s.query.trim() !== "");
+  const searching = useSearching();
   return (
     <NotesGrid
       notes={notes}

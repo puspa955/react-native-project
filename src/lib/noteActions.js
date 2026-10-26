@@ -27,6 +27,11 @@ export function archiveNotes(ids) {
   );
 }
 
+export function copyNotes(ids) {
+  ids.forEach((id) => useNotes.getState().duplicate(id));
+  useSettings.getState().showToast(plural(ids, "Copy created", "copies created"));
+}
+
 export function pinNotes(ids) {
   useNotes.getState().pinMany(ids);
 }

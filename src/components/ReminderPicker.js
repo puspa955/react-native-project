@@ -18,9 +18,12 @@ function presets() {
 }
 
 // "Remind me" dialog: quick presets, or type a date (YYYY-MM-DD) and a 24h time (HH:MM).
-export default function ReminderPicker({ visible, onClose, noteId }) {
+// For one note pass noteId; to set the same reminder on several notes pass noteIds.
+// onDone runs after a reminder was saved or removed.
+export default function ReminderPicker({ visible, onClose, noteId, noteIds, onDone }) {
   const c = useTheme();
-  const current = useNotes((s) => s.notes.find((n) => n.id === noteId)?.reminder);
+  const ids = noteIds ?? [noteId];
+  const current = useNotes((s) => s.notes.find((n) => n.id === ids[0])?.reminder);
   const setReminder = useNotes((s) => s.setReminder);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
@@ -36,8 +39,9 @@ export default function ReminderPicker({ visible, onClose, noteId }) {
   }, [visible, current]);
 
   const save = (ts) => {
-    setReminder(noteId, ts);
+    ids.forEach((id) => setReminder(id, ts));
     onClose();
+    onDone?.();
   };
 
   const saveCustom = () => {
@@ -111,6 +115,9 @@ const styles = StyleSheet.create({
   label: { fontSize: 11, fontWeight: "600", letterSpacing: 1, marginTop: 4 },
   inputs: { flexDirection: "row", gap: 8 },
   field: {
+    // minWidth 0: a web text box refuses to get narrower than its default width, so without it
+    // the time field pushed past the right edge of the dialog
+    minWidth: 0,
     borderWidth: 1,
     borderRadius: 6,
     paddingHorizontal: 10,

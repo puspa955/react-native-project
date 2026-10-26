@@ -5,15 +5,14 @@ import Icon from "@/components/Icon";
 import NotesGrid from "@/components/NotesGrid";
 import { IS_WEB } from "@/lib/platform";
 import { useTheme } from "@/hooks/useTheme";
-import { useNoteList, useNotes } from "@/store/notesStore";
-import { useSettings } from "@/store/settingsStore";
+import { useNoteList, useNotes, useSearching } from "@/store/notesStore";
 
 export default function LabelScreen() {
   const c = useTheme();
   const { id } = useLocalSearchParams();
   const label = useNotes((s) => s.labels.find((l) => l.id === id));
   const notes = useNoteList(`label:${id}`);
-  const searching = useSettings((s) => s.query.trim() !== "");
+  const searching = useSearching();
 
   if (!label) {
     return (

@@ -1,5 +1,6 @@
-import { Modal, Pressable, StyleSheet, Text } from "react-native";
+import { Modal, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Brand from "@/components/Brand";
 import Sidebar from "@/components/Sidebar";
 import { useTheme } from "@/hooks/useTheme";
 import { useSettings } from "@/store/settingsStore";
@@ -23,7 +24,7 @@ export default function Drawer() {
             { backgroundColor: c.bg, borderRightColor: c.border, paddingTop: insets.top + 8 },
           ]}
         >
-          <Text style={styles.logo}>Jotter</Text>
+          <Brand style={styles.brand} />
           <Sidebar onNavigate={close} style={styles.sidebar} />
         </Pressable>
       </Pressable>
@@ -34,6 +35,6 @@ export default function Drawer() {
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
   panel: { width: 290, maxWidth: "85%", height: "100%", borderRightWidth: 1 },
-  logo: { fontSize: 24, color: "#f9ab00", fontWeight: "700", padding: 16, paddingTop: 8 },
+  brand: { padding: 16, paddingTop: 8 },
   sidebar: { width: "100%" },
 });

@@ -7,26 +7,37 @@ import { useNotes } from "@/store/notesStore";
 
 const noOutline = Platform.select({ web: { outlineStyle: "none" }, default: {} });
 
-// "Label note" dialog: tick the labels a note should have, or create a new one on the spot.
-export default function LabelPicker({ visible, onClose, noteId }) {
+// "Add label" dialog: tick the labels a note should have, or create a new one on the spot.
+// For one note pass noteId; for several notes pass noteIds. A label shows ticked only when every
+// one of those notes has it, and ticking it adds it to all of them (unticking removes it from all).
+export default function LabelPicker({ visible, onClose, noteId, noteIds }) {
   const c = useTheme();
+  const ids = noteIds ?? [noteId];
   const labels = useNotes((s) => s.labels);
-  const selected = useNotes((s) => s.notes.find((n) => n.id === noteId)?.labels);
+  const notes = useNotes((s) => s.notes);
   const addLabel = useNotes((s) => s.addLabel);
   const toggleNoteLabel = useNotes((s) => s.toggleNoteLabel);
   const [draft, setDraft] = useState("");
 
-  const has = (id) => (selected || []).includes(id);
+  const targets = notes.filter((n) => ids.includes(n.id));
+  const hasIt = (n, labelId) => (n.labels || []).includes(labelId);
+  const has = (labelId) => targets.length > 0 && targets.every((n) => hasIt(n, labelId));
   const exists = labels.some((l) => l.name.toLowerCase() === draft.trim().toLowerCase());
+
+  // give the label to every note that lacks it (add), or take it from every note that has it
+  const apply = (labelId, add) =>
+    targets.forEach((n) => {
+      if (hasIt(n, labelId) !== add) toggleNoteLabel(n.id, labelId);
+    });
 
   const create = () => {
     const id = addLabel(draft);
-    if (id && !has(id)) toggleNoteLabel(noteId, id);
+    if (id) apply(id, true);
     setDraft("");
   };
 
   return (
-    <Sheet visible={visible} onClose={onClose} title="Label note">
+    <Sheet visible={visible} onClose={onClose} title="Add label">
       <View style={styles.row}>
         <TextInput
           autoFocus
@@ -46,7 +57,7 @@ export default function LabelPicker({ visible, onClose, noteId }) {
       )}
       <ScrollView style={styles.list}>
         {labels.map((l) => (
-          <Pressable key={l.id} onPress={() => toggleNoteLabel(noteId, l.id)} style={styles.row}>
+          <Pressable key={l.id} onPress={() => apply(l.id, !has(l.id))} style={styles.row}>
             <Icon
               name={has(l.id) ? "check-box" : "check-box-outline-blank"}
               size={22}

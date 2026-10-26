@@ -8,6 +8,51 @@ import { useSettings } from "@/store/settingsStore";
 
 const WEEK = 7 * 24 * 60 * 60 * 1000;
 
+// The ways to order notes (the header's sort menu). Pinned notes still come first in the Notes view.
+export const SORT_OPTIONS = [
+  { value: "edited", label: "Last edited" },
+  { value: "created", label: "Date created (newest first)" },
+  { value: "created-asc", label: "Date created (oldest first)" },
+  { value: "title", label: "Title (A to Z)" },
+];
+
+// The note types you can filter by in the search panel.
+export const FILTER_TYPES = [
+  { value: "reminders", label: "Reminders", icon: "notifications-none", test: (n) => !!n.reminder },
+  { value: "lists", label: "Lists", icon: "check-box", test: (n) => n.type === "list" },
+  { value: "images", label: "Images", icon: "image", test: (n) => (n.images || []).length > 0 },
+  { value: "drawings", label: "Drawings", icon: "brush", test: (n) => (n.drawings || []).length > 0 },
+];
+
+export function hasActiveFilters(f) {
+  return f.types.length > 0 || f.colors.length > 0 || f.labels.length > 0;
+}
+
+// true while a search is going on: some text is typed or a filter is picked
+export function useSearching() {
+  const query = useSettings((s) => s.query);
+  const filters = useSettings((s) => s.filters);
+  return query.trim() !== "" || hasActiveFilters(filters);
+}
+
+function matchesFilters(n, f) {
+  if (f.types.length && !FILTER_TYPES.some((t) => f.types.includes(t.value) && t.test(n))) return false;
+  if (f.colors.length && !f.colors.includes(n.color)) return false;
+  if (f.labels.length && !f.labels.some((id) => (n.labels || []).includes(id))) return false;
+  return true;
+}
+
+const SORTERS = {
+  edited: (a, b) => b.updatedAt - a.updatedAt,
+  created: (a, b) => b.createdAt - a.createdAt,
+  "created-asc": (a, b) => a.createdAt - b.createdAt,
+  // notes without a title go last
+  title: (a, b) => {
+    if (!a.title.trim() !== !b.title.trim()) return a.title.trim() ? -1 : 1;
+    return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+  },
+};
+
 export function newItem(text = "") {
   return { id: newId(), text, done: false };
 }
@@ -302,10 +347,13 @@ export function useNoteList(view) {
   const notes = useNotes((s) => s.notes);
   const query = useSettings((s) => s.query).trim();
   const composingId = useSettings((s) => s.composingId);
+  const sortBy = useSettings((s) => s.sortBy);
+  const filters = useSettings((s) => s.filters);
   return useMemo(() => {
     const labelId = view.startsWith("label:") ? view.slice(6) : null;
     const list = notes.filter((n) => {
       if (n.id === composingId) return false;
+      if (!matchesFilters(n, filters)) return false;
       if (view === "trash") return !!n.trashedAt && (!query || matches(n, query));
       if (n.trashedAt) return false;
       if (view === "reminders" && !n.reminder) return false;
@@ -315,6 +363,6 @@ export function useNoteList(view) {
       return !query || matches(n, query);
     });
     if (view === "reminders") return list.sort((a, b) => a.reminder - b.reminder);
-    return list.sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [notes, view, query, composingId]);
+    return list.sort(SORTERS[sortBy] || SORTERS.edited);
+  }, [notes, view, query, composingId, sortBy, filters]);
 }
